@@ -1,14 +1,11 @@
 import { useCanvasAction } from "@/hooks/useReduxAction"
-import { setHasUploadedImages } from "@/redux/canvasSlice"
-import { addImagesToPool } from "@/redux/selectedImageSlice"
 import clsx from "clsx"
 import { useRef } from "react"
 import toast from "react-hot-toast"
-import { useDispatch } from "react-redux"
 
 export default function InitialUploadScreen() {
   const inputRef = useRef<HTMLInputElement | null>(null)
-  const dispatch = useDispatch()
+  const { addImagesToPoolAction, setHasUploadedImagesAction } = useCanvasAction()
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files
@@ -28,8 +25,8 @@ export default function InitialUploadScreen() {
 
         // When all files are processed
         if (processedFiles === files.length) {
-          dispatch(addImagesToPool(fileUrls))
-          dispatch(setHasUploadedImages(true))
+          addImagesToPoolAction(fileUrls)
+          setHasUploadedImagesAction(true)
           toast.success(`${fileUrls.length} image(s) uploaded successfully!`, {
             id: "initial-upload",
           })
