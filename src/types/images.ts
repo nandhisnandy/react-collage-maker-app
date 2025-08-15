@@ -19,6 +19,7 @@ export interface UploadedImage {
 export interface SelectedImageStateType {
   selectedImageIndex: number | null
   images: UploadedImage[]
+  uploadedImagePool: string[]
 }
 
 export interface ImageFilterUpdate {

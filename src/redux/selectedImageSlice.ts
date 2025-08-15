@@ -8,6 +8,7 @@ import { createSlice, PayloadAction } from "@reduxjs/toolkit"
 const defaultState: SelectedImageStateType = {
   selectedImageIndex: null,
   images: [],
+  uploadedImagePool: [],
 }
 
 export const selectedImageSlice = createSlice({
@@ -16,6 +17,12 @@ export const selectedImageSlice = createSlice({
   reducers: {
     newImage: (state, action: PayloadAction<UploadedImage>) => {
       state.images = [...state.images, action.payload]
+    },
+    addImagesToPool: (state, action: PayloadAction<string[]>) => {
+      state.uploadedImagePool = [...state.uploadedImagePool, ...action.payload]
+    },
+    removeImageFromPool: (state, action: PayloadAction<number>) => {
+      state.uploadedImagePool.splice(action.payload, 1)
     },
     setSelectedImage: (state, action: PayloadAction<string>) => {
       const selectedIndex = state.images.findIndex(
@@ -29,6 +36,7 @@ export const selectedImageSlice = createSlice({
     clearAllImages: (state) => {
       state.selectedImageIndex = null
       state.images = []
+      state.uploadedImagePool = []
     },
     setImageFilterValue: (state, action: PayloadAction<ImageFilterUpdate>) => {
       // protect imageIndex  againts nulls before running the reducer
@@ -47,6 +55,8 @@ export const selectedImageSlice = createSlice({
 
 export const {
   newImage,
+  addImagesToPool,
+  removeImageFromPool,
   setSelectedImage,
   clearSelectedImage,
   clearAllImages,

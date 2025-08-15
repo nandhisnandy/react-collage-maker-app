@@ -37,12 +37,20 @@ function useCanvasImageData() {
   const images = useAppSelector(
     (state: RootStateType) => state.selection.images,
   )
+  const uploadedImagePool = useAppSelector(
+    (state: RootStateType) => state.selection.uploadedImagePool,
+  )
+  const hasUploadedImages = useAppSelector(
+    (state: RootStateType) => state.canvas.hasUploadedImages,
+  )
 
   return {
     images,
     maxImageUploads,
     selectedImageIndex,
     uploadCount,
+    uploadedImagePool,
+    hasUploadedImages,
   }
 }
 

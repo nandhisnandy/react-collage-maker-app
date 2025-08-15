@@ -43,4 +43,5 @@ export interface CanvasStateType {
   ratio: number
   template: number
   tab: SelectedTabType
+  hasUploadedImages: boolean
 }

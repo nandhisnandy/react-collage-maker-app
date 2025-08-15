@@ -1,6 +1,6 @@
 import { OBJECT_LOCKED, ASPECT_RATIOS } from "@/constants/canvasConfig"
 import { useCanvasAction, useTabAction } from "@/hooks/useReduxAction"
-import { useCanvasConfigData } from "@/hooks/useReduxData"
+import { useCanvasConfigData, useCanvasImageData } from "@/hooks/useReduxData"
 import { CustomImageObject } from "@/types"
 import * as fabric from "fabric"
 import { useEffect, useRef } from "react"
@@ -10,23 +10,79 @@ export default function Canvas() {
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const inputRef = useRef<HTMLInputElement | null>(null)
   const wrapperRef = useRef<HTMLDivElement | null>(null)
+  const cellIndexRef = useRef<number>(0)
 
   // Get necessary Redux data via hooks
   const { activeTemplateIndex, activeRatioIndex, activeTemplate } =
     useCanvasConfigData()
+  const { uploadedImagePool } = useCanvasImageData()
 
   const {
     addImageAction,
     clearSelectedImageAction,
     setCanvasAction,
     setSelectedImageAction,
+    removeImageFromPoolAction,
   } = useCanvasAction()
 
   const { changeTabAction } = useTabAction()
 
+  // Auto-populate canvas with images from pool
+  const populateCanvasWithImages = (canvas: fabric.Canvas, cells: fabric.Rect[]) => {
+    uploadedImagePool.forEach((imageDataUrl, poolIndex) => {
+      if (poolIndex < cells.length) {
+        const cell = cells[poolIndex]
+        const config = activeTemplate.config[poolIndex]
+        
+        // Load image from pool
+        fabric.Image.fromURL(imageDataUrl).then((img) => {
+          const imgId = `img_${new Date().getTime()}_${poolIndex}`
+
+          // Set position to selected cell
+          img.set({
+            id: imgId,
+            left: cell.left,
+            top: cell.top,
+            selectable: true,
+            hasControls: true,
+            clipPath: cell,
+            perPixelTargetFind: true,
+          }) as CustomImageObject
+
+          // Scale accordingly to look good
+          if (config.scaleTo === "width") {
+            img.scaleToWidth(cell.width + 1)
+          } else if (config.scaleTo === "height") {
+            img.scaleToHeight(cell.height + 1)
+          }
+
+          // Save image in redux
+          addImageAction({
+            id: imgId,
+            filters: {
+              brightness: 0,
+              contrast: 0,
+              noise: 0,
+              saturation: 0,
+              vibrance: 0,
+              blur: 0,
+            },
+          })
+
+          canvas.add(img)
+          canvas.remove(cell) // Remove the placeholder cell
+          canvas.renderAll()
+        })
+      }
+    })
+  }
+
   // Canvas initialization
   useEffect(() => {
     if (canvasRef.current && wrapperRef.current) {
+      // Reset cell index
+      cellIndexRef.current = 0
+      
       // 0. Calculate canvas ratio by initial client width
       const panelWidth =
         wrapperRef.current.clientWidth > 640
@@ -52,79 +108,70 @@ export default function Canvas() {
       setCanvasAction(canvas)
 
       // 2. Setup objects & its properties
+      const cells: fabric.Rect[] = []
       activeTemplate.config.forEach((config) => {
         const PROPERTIES = config.rectFabric(ratio.height, ratio.width)
         const cell = new fabric.Rect(PROPERTIES).set(OBJECT_LOCKED)
+        cells.push(cell)
 
         // 3. Define image upload event handler
         const handleImageUpload = (selectedCell: fabric.Rect) => {
-          const input = inputRef.current
-          if (input) {
-            input.onchange = async (event) => {
-              const target = event.target as HTMLInputElement
-              const file = target.files && target.files[0]
-              if (!file) return
+          // Check if there are images in the pool to use
+          if (uploadedImagePool.length > 0 && cellIndexRef.current < uploadedImagePool.length) {
+            const imageDataUrl = uploadedImagePool[cellIndexRef.current]
+            
+            // Load image from pool
+            fabric.Image.fromURL(imageDataUrl).then((img) => {
+              const imgId = `img_${new Date().getTime()}_${cellIndexRef.current}`
 
-              // Load uploaded file as Base64
-              const reader = new FileReader()
-              reader.readAsDataURL(file)
-              reader.onload = (e) => {
-                const dataUrl = e.target?.result as string
-                // Load image as fabric image
-                const addImage = async (imageBase64: string) => {
-                  const img = await fabric.Image.fromURL(imageBase64)
-                  const imgId = `img_${new Date().getTime()}`
+              // Set position to selected cell
+              img.set({
+                id: imgId,
+                left: selectedCell.left,
+                top: selectedCell.top,
+                selectable: true,
+                hasControls: true,
+                clipPath: selectedCell,
+                perPixelTargetFind: true,
+              }) as CustomImageObject
 
-                  // Set position to selected cell
-                  img.set({
-                    id: imgId,
-                    left: selectedCell.left,
-                    top: selectedCell.top,
-                    selectable: true,
-                    hasControls: true,
-                    clipPath: selectedCell,
-                    perPixelTargetFind: true,
-                  }) as CustomImageObject
-
-                  // Scale accordingly to look good
-                  if (config.scaleTo === "width") {
-                    img.scaleToWidth(selectedCell.width + 1)
-                  } else if (config.scaleTo === "height") {
-                    img.scaleToHeight(selectedCell.height + 1)
-                  }
-
-                  // Save image in redux
-                  addImageAction({
-                    id: imgId,
-                    filters: {
-                      brightness: 0,
-                      contrast: 0,
-                      noise: 0,
-                      saturation: 0,
-                      vibrance: 0,
-                      blur: 0,
-                    },
-                  })
-
-                  canvas.add(img)
-                  canvas.setActiveObject(img)
-                }
-                addImage(dataUrl)
+              // Scale accordingly to look good
+              if (config.scaleTo === "width") {
+                img.scaleToWidth(selectedCell.width + 1)
+              } else if (config.scaleTo === "height") {
+                img.scaleToHeight(selectedCell.height + 1)
               }
 
-              // Render in canvas
+              // Save image in redux
+              addImageAction({
+                id: imgId,
+                filters: {
+                  brightness: 0,
+                  contrast: 0,
+                  noise: 0,
+                  saturation: 0,
+                  vibrance: 0,
+                  blur: 0,
+                },
+              })
+
+              canvas.add(img)
               canvas.remove(selectedCell)
               canvas.renderAll()
-              toast.success("Image successfully added.", {
+              
+              cellIndexRef.current++
+              
+              toast.success("Image added to collage.", {
                 id: "toast-uploaded",
               })
 
               // Switch to More tab, to show controls on active object
               changeTabAction("more")
-            }
-
-            input.click()
-            input.value = ""
+            })
+          } else {
+            toast.error("No more images available. Upload more images to continue.", {
+              id: "toast-no-images",
+            })
           }
         }
 
@@ -136,6 +183,13 @@ export default function Canvas() {
         // 5. Render
         canvas.add(cell)
       })
+
+      // Auto-populate with images from pool
+      if (uploadedImagePool.length > 0) {
+        setTimeout(() => {
+          populateCanvasWithImages(canvas, cells)
+        }, 100) // Small delay to ensure canvas is ready
+      }
 
       // 6. Render all looped objects
       canvas.renderAll()
@@ -194,7 +248,7 @@ export default function Canvas() {
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeRatioIndex, activeTemplateIndex])
+  }, [activeRatioIndex, activeTemplateIndex, uploadedImagePool.length])
 
   return (
     <div

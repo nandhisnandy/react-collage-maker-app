@@ -3,6 +3,7 @@ import {
   changeRatioByIndex,
   changeTemplateByIndex,
   setCanvas,
+  setHasUploadedImages,
 } from "@/redux/canvasSlice"
 import { useAppDispatch } from "@/redux/hooks"
 import {
@@ -11,6 +12,8 @@ import {
   newImage,
   setSelectedImage,
   setImageFilterValue,
+  addImagesToPool,
+  removeImageFromPool,
 } from "@/redux/selectedImageSlice"
 import type { ImageFilterUpdate, SelectedTabType, UploadedImage } from "@/types"
 import type { Canvas } from "fabric"
@@ -27,7 +30,6 @@ function useRatioAction() {
   const dispatch = useAppDispatch()
   const changeRatio = (index: number) => {
     dispatch(changeRatioByIndex(index))
-    dispatch(clearAllImages())
   }
   return { changeRatio }
 }
@@ -36,7 +38,6 @@ function useTemplateAction() {
   const dispatch = useAppDispatch()
   const changeTemplate = (index: number) => {
     dispatch(changeTemplateByIndex(index))
-    dispatch(clearAllImages())
   }
   return { changeTemplate }
 }
@@ -63,11 +64,23 @@ function useCanvasAction() {
   const setSelectedImageAction = (id: string) => {
     dispatch(setSelectedImage(id))
   }
+  const addImagesToPoolAction = (images: string[]) => {
+    dispatch(addImagesToPool(images))
+  }
+  const removeImageFromPoolAction = (index: number) => {
+    dispatch(removeImageFromPool(index))
+  }
+  const setHasUploadedImagesAction = (hasImages: boolean) => {
+    dispatch(setHasUploadedImages(hasImages))
+  }
   return {
     addImageAction,
     clearSelectedImageAction,
     setCanvasAction,
     setSelectedImageAction,
+    addImagesToPoolAction,
+    removeImageFromPoolAction,
+    setHasUploadedImagesAction,
   }
 }
 

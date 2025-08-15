@@ -7,6 +7,7 @@ const defaultState: CanvasStateType = {
   ratio: 0,
   template: 0,
   tab: "template",
+  hasUploadedImages: false,
 }
 
 export const canvasSlice = createSlice({
@@ -27,6 +28,9 @@ export const canvasSlice = createSlice({
       // @ts-ignore
       state.canvas = action.payload
     },
+    setHasUploadedImages: (state, action: PayloadAction<boolean>) => {
+      state.hasUploadedImages = action.payload
+    },
   },
 })
 
@@ -35,6 +39,7 @@ export const {
   changeRatioByIndex,
   changeTab,
   setCanvas,
+  setHasUploadedImages,
 } = canvasSlice.actions
 
 export default canvasSlice.reducer

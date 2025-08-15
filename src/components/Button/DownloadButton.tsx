@@ -7,7 +7,7 @@ import toast from "react-hot-toast"
 export default function DownloadButton() {
   const linkRef = useRef<HTMLAnchorElement | null>(null)
   const { canvas } = useCanvasData()
-  const { uploadCount, maxImageUploads } = useCanvasImageData()
+  const { uploadCount } = useCanvasImageData()
 
   const downloadImage = () => {
     if (canvas && linkRef.current) {
@@ -32,7 +32,7 @@ export default function DownloadButton() {
           "bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-500 disabled:text-gray-300/50",
         ])}
         onClick={downloadImage}
-        disabled={uploadCount !== maxImageUploads}
+        disabled={uploadCount === 0}
       >
         <DownloadIcon className="mr-2" />
         <span>
